@@ -17,8 +17,10 @@ Plugin 'gmarik/Vundle.vim'
 Plugin 'vim-scripts/indentpython.vim'
 Plugin 'vim-syntastic/syntastic'
 Plugin 'vim-airline/vim-airline'
+Plugin 'vim-airline/vim-airline-themes'
 Plugin 'nvie/vim-flake8'
 Plugin 'tpope/vim-fugitive'
+Plugin 'tpope/vim-rhubarb'
 Plugin 'Lokaltog/powerline', {'rtp': 'powerline/bindings/vim/'}
 Plugin 'itchyny/lightline.vim'
 Plugin 'junegunn/fzf', { 'do': { -> fzf#install() } }
@@ -35,6 +37,11 @@ Plugin 'mbbill/undotree'
 Plugin 'evansalter/vim-checklist'
 " Asynchronous Linters
 Plugin 'dmerejkowsky/vim-ale'
+Plugin 'preservim/nerdtree'
+"Plugin 'liuchengxu/vista.vim'
+Plugin 'airblade/vim-gitgutter'
+
+
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
 filetype plugin indent on    " required
@@ -48,7 +55,23 @@ set clipboard=unnamed
 
 " Status line 
 set laststatus=2
-let g:lightline = { 'colorscheme': 'powerline', }
+""let g:lightline = { 'colorscheme': 'powerline', }
+
+let g:lightline = {
+  \ 'colorscheme': 'powerline',
+  \ 'component_function': {
+  \   'filename': 'LightlineFullPath'
+  \ },
+  \ 'active': {
+  \   'left': [ [ 'mode' ], [ 'filename' ] ],
+  \   'right': [ [ 'lineinfo' ], [ 'percent' ], [ 'fileformat', 'fileencoding', 'filetype' ] ]
+  \ }
+  \ }
+
+function! LightlineFullPath()
+  return expand('%:p') !=# '' ? expand('%:p') : '[No Name]'
+endfunction
+
 
 au BufNewFile,BufRead *.py,*.kv
     \ set tabstop=4 |
@@ -65,6 +88,7 @@ set backspace=indent,eol,start
 
 " Keeps cursor while scrolling
 set so=999
+set scrolloff=0
 
 filetype plugin indent on
 set tabstop=4
@@ -93,6 +117,57 @@ inoremap <silent><expr> <Tab>
       \ pumvisible() ? "\<C-n>" :
       \ <SID>check_back_space() ? "\<Tab>" :
       \ coc#refresh()
+
+" CoC configuration enhancements
+" Use <c-space> to trigger completion
+inoremap <silent><expr> <c-space> coc#refresh()
+
+" Use <cr> to confirm completion
+inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm() : "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+
+" GoTo code navigation
+nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gy <Plug>(coc-type-definition)
+nmap <silent> gi <Plug>(coc-implementation)
+nmap <silent> gr <Plug>(coc-references)
+
+" Use K to show documentation in preview window
+nnoremap <silent> K :call ShowDocumentation()<CR>
+function! ShowDocumentation()
+  if CocAction('hasProvider', 'hover')
+    call CocActionAsync('doHover')
+  else
+    call feedkeys('K', 'in')
+  endif
+endfunction
+
+" Symbol renaming
+nmap <leader>rn <Plug>(coc-rename)
+
+" Add `:Format` command to format current buffer
+command! -nargs=0 Format :call CocAction('format')
+
+" Apply code action to selected region
+xmap <leader>a  <Plug>(coc-codeaction-selected)
+nmap <leader>a  <Plug>(coc-codeaction-selected)
+
+" Apply code action to current buffer
+nmap <leader>ac  <Plug>(coc-codeaction)
+" Apply AutoFix to problem on the current line
+nmap <leader>qf  <Plug>(coc-fix-current)
+
+" Navigate diagnostics
+nmap <silent> [g <Plug>(coc-diagnostic-prev)
+nmap <silent> ]g <Plug>(coc-diagnostic-next)
+
+" Highlight the symbol and its references when holding the cursor
+autocmd CursorHold * silent call CocActionAsync('highlight')
+
+" Add `:Fold` command to fold current buffer
+command! -nargs=? Fold :call CocAction('fold', <f-args>)
+
+" Add `:OR` command for organize imports of the current buffer
+command! -nargs=0 OR :call CocAction('runCommand', 'editor.action.organizeImport')
 
 nnoremap <S-k> :m-2<CR>
 nnoremap <S-j> :m+<CR>
@@ -124,7 +199,11 @@ set incsearch
 
 " Playing with FZF  window
 let g:fzf_layout = { 'window': { 'width': 0.9, 'height': 0.9 } }
-let $FZF_DEFAULT_OPTS="--ansi --preview-window 'right:60%' --margin=1,4 --preview 'bat --color=always --style=header,grid --line-range :300 {}'"
+let $FZF_DEFAULT_OPTS="--ansi --preview-window 'right:60%' --margin=1,4 --preview 'bat --color=always --style=header,grid --line-range :300 {}'" 
+"let $FZF_DEFAULT_COMMAND = 'rg --files --hidden --glob "!.git/" --glob "!.terraform/"'
+""let $FZF_DEFAULT_COMMAND = 'rg --files --glob "!.git/" --glob "!.terraform/"'
+let $FZF_DEFAULT_COMMAND = 'rg --files --hidden --glob "!.git/*" --glob "!.terraform/*" --glob "*.tf" --glob "*.tfvars"'
+
 
 " Allows mouse manipulation
 set mouse=a
@@ -136,6 +215,17 @@ set ignorecase
 set statusline+=%#warningmsg#
 set statusline+=%{SyntasticStatuslineFlag()}
 set statusline+=%*
+
+" === path **relative** to your cwd (e.g. Git repo root) ===
+""let g:airline_section_c = airline#section#create(['file_relative', 'filename'])
+
+" === full **absolute** path on disk ===
+""let g:airline_section_c = airline#section#create(['file_path', 'filename'])
+let g:airline#extensions#tabline#enabled = 1
+
+
+" Always show the statusline
+set laststatus=2
 
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_auto_loc_list = 1
@@ -173,3 +263,24 @@ inoremap {;<CR> {<CR>};<ESC>O
 " Run Python super fast"
 nnoremap <leader>r :!python %<CR>
 
+" Configure fugitive browser for Github
+" Enable github.com domain for GBrowse
+let g:fugitive_github_domains = ['github.com']
+
+" Configure how to open URLs (uses netrw by default)
+let g:netrw_browsex_viewer = "open"
+
+set undofile
+set undodir=~/.vim/undodir
+
+autocmd VimEnter * call timer_start(50, {-> execute('redraw!')})
+
+" Quickfix navigation (Syntastic, vim-flake8, etc.)
+nnoremap <leader>cn :cnext<CR>
+nnoremap <leader>cp :cprev<CR>
+nnoremap <leader>co :copen<CR>
+
+" Location list navigation (ALE, etc.)
+nnoremap <leader>ln :lnext<CR>
+nnoremap <leader>lp :lprev<CR>
+nnoremap <leader>lo :lopen<CR>
