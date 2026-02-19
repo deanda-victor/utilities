@@ -115,13 +115,27 @@ alias task=" task"
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
-alias vif="vim \$(fzf --preview='bat {} --color=always')"
+# alias vif="vim \$(fzf --preview='bat {} --color=always')"
+alias vif="selected=\$(fzf --preview='bat {} --color=always' --preview-window=right,70%); if [ -d \"\$selected\" ]; then cd \"\$selected\" && vif; else vim \"\$selected\"; fi"
 alias pf="fzf --preview='less {}' --bind shift-up:preview-page-up,shift-down:preview-page-down"
+alias tw="taskwarrior-tui"
 
 # 1. Search for text in files using Ripgrep
 # 2. Interactively restart Ripgrep with reload action
 # 3. Open the file in Vim
 RG_PREFIX="rg --column --line-number --no-heading --color=always --smart-case "
+
+vid() {
+    local dir
+    dir=$(fd --type d --max-depth 6 2>/dev/null | fzf --preview="ls -la {}")
+    [ -n "$dir" ] && cd "$dir"
+}
+
+vig() {
+    rg --no-heading --line-number --color=always "$1" | \
+    fzf --ansi --delimiter : --preview 'bat --color=always --style=numbers --highlight-line {2} {1}' \
+    --bind "enter:execute(vim {1} +{2})"
+}
 
 # MySQL Section
 export PATH=$PATH:/Applications/MySQLWorkbench.app/Contents/MacOS
