@@ -52,7 +52,7 @@ ZSH_THEME="agnoster"
 # Uncomment the following line if you want to disable marking untracked files
 # under VCS as dirty. This makes repository status check for large repositories
 # much, much faster.
-# DISABLE_UNTRACKED_FILES_DIRTY="true"
+DISABLE_UNTRACKED_FILES_DIRTY="true"
 
 # Uncomment the following line if you want to change the command execution time
 # stamp shown in the history command output.
@@ -126,8 +126,20 @@ alias tw="taskwarrior-tui"
 RG_PREFIX="rg --column --line-number --no-heading --color=always --smart-case "
 
 vid() {
-    local dir
-    dir=$(fd --type d --max-depth 6 2>/dev/null | fzf --preview="ls -la {}")
+    local dir fd_pid
+    exec {FD}< <(fd --type d \
+        --exclude node_modules \
+        --exclude .terraform \
+        --exclude vendor \
+        --exclude __pycache__ \
+        --exclude '.git' \
+        2>/dev/null)
+    fd_pid=$!
+    dir=$(fzf --preview="ls -la {}" \
+              --preview-window=right:40%:hidden \
+              --bind='?:toggle-preview' <&$FD)
+    kill -9 $fd_pid 2>/dev/null
+    exec {FD}<&-
     [ -n "$dir" ] && cd "$dir"
 }
 
